@@ -1,0 +1,19 @@
+{
+  "name": "lobops-darts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4387",
+    "build": "vite build",
+    "test": "vitest run",
+    "preview": "vite preview --host 0.0.0.0 --port 4387"
+  },
+  "dependencies": {
+    "acs-audio": "0.9.6"
+  },
+  "devDependencies": {
+    "vite": "^7.3.6",
+    "vitest": "^3.2.7"
+  }
+}
