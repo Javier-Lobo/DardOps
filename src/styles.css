@@ -121,6 +121,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, [role="button"]
 .voice-mode-badge { position: absolute; right: 2px; bottom: 2px; display: grid; min-width: 14px; height: 14px; padding: 0 3px; place-items: center; border-radius: 4px; color: var(--panel-solid); background: var(--primary); font: 700 8px/1 "IBM Plex Mono", monospace; }
 .voice-mode-button[data-voice-mode="turn-only"] .voice-mode-badge { background: var(--cyan); }
 .voice-mode-button[data-voice-mode="silent"] .voice-mode-badge { background: var(--muted); }
+.language-button { font: 700 10px/1 "IBM Plex Mono", monospace; letter-spacing: .5px; }
 .icon { display: inline-grid; width: 18px; height: 18px; place-items: center; }
 .icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 

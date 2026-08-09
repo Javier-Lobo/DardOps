@@ -1,6 +1,7 @@
 import { CRICKET_TARGETS, GAME_CONFIGS } from "./game-config.js";
 import { GameFinishedError, InvalidGameError, InvalidPlayersError } from "./errors.js";
 import { MAX_UNDO_STEPS } from "./game-state.js";
+import { translate } from "./i18n.js";
 
 export function createGame(playerNames, gameId) {
   const names = normalizePlayerNames(playerNames);
@@ -58,21 +59,31 @@ export function undoDart(game) {
   return { ...previous, history: game.history.slice(0, -1) };
 }
 
-export function getGameStatus(game) {
+export function getGameStatus(game, language = "es") {
   const config = GAME_CONFIGS[game.gameId];
   let status;
   if (game.winnerId) {
-    status = `${getWinner(game).name} ha ganado. Qué inesperado.`;
+    status = translate(language, "statusWinner", { name: getWinner(game).name });
   } else if (config.kind === "x01") {
-    status = buildX01Status(game);
+    status = buildX01Status(game, language);
   } else if (config.kind === "cricket") {
-    status = buildCricketStatus(game);
+    status = buildCricketStatus(game, language);
   } else if (config.kind === "clock") {
-    status = buildClockStatus(game);
+    status = buildClockStatus(game, language);
   } else {
-    status = buildHighScoreStatus(game, config);
+    status = buildHighScoreStatus(game, config, language);
   }
   return status;
+}
+
+export function getTurnStatus(game, turn, language = "es") {
+  const playerIndex = game.players.findIndex((player) => player.id === turn.statusPlayerId);
+  const statusGame = {
+    ...game,
+    currentPlayer: playerIndex >= 0 ? playerIndex : game.currentPlayer,
+    round: turn.statusRound ?? game.round
+  };
+  return getGameStatus(statusGame, language);
 }
 
 export function getTurnTotal(game) {
@@ -92,7 +103,7 @@ function normalizePlayerNames(playerNames) {
   if (names.length < 1 || names.length > 8) {
     throw new InvalidPlayersError("Debe haber entre 1 y 8 jugadores");
   }
-  if (new Set(names.map((name) => name.toLocaleLowerCase("es"))).size !== names.length) {
+  if (new Set(names.map((name) => name.toLocaleLowerCase())).size !== names.length) {
     throw new InvalidPlayersError("Los nombres no pueden repetirse");
   }
   return names;
@@ -193,10 +204,11 @@ function createTurnSummary(game, player, message, bust) {
     points: bust ? 0 : scoredPoints,
     rawPoints: getTurnTotal(game),
     gameKind: config.kind,
+    statusPlayerId: player.id,
+    statusRound: game.round,
     darts: game.darts.map((dart) => ({ ...dart })),
     bust,
-    message,
-    status: getGameStatus(game)
+    message
   };
 }
 
@@ -238,26 +250,31 @@ function getHighScoreWinner(game) {
   return [...game.players].sort((left, right) => right.score - left.score)[0];
 }
 
-function buildX01Status(game) {
+function buildX01Status(game, language) {
   const player = game.players[game.currentPlayer];
-  return `${player.name} tiene ${player.score} puntos restantes. Ronda ${game.round}.`;
+  return translate(language, "statusX01", { name: player.name, score: player.score, round: game.round });
 }
 
-function buildCricketStatus(game) {
+function buildCricketStatus(game, language) {
   const leader = [...game.players].sort((left, right) => right.score - left.score)[0];
   const closed = CRICKET_TARGETS.filter((target) => game.players.every((player) => player.cricket[target] === 3));
-  return `${leader.name} lidera con ${leader.score}. Cerrados para todos: ${closed.length} de 7.`;
+  return translate(language, "statusCricket", { name: leader.name, score: leader.score, closed: closed.length });
 }
 
-function buildClockStatus(game) {
+function buildClockStatus(game, language) {
   const player = game.players[game.currentPlayer];
   const target = player.clockTarget === 25 ? "bull" : player.clockTarget;
-  return `${player.name} busca el ${target}. Ronda ${game.round}.`;
+  return translate(language, "statusClock", { name: player.name, target, round: game.round });
 }
 
-function buildHighScoreStatus(game, config) {
+function buildHighScoreStatus(game, config, language) {
   const leader = [...game.players].sort((left, right) => right.score - left.score)[0];
-  return `${leader.name} lidera con ${leader.score}. Ronda ${game.round} de ${config.maxRounds}.`;
+  return translate(language, "statusHigh", {
+    name: leader.name,
+    score: leader.score,
+    round: game.round,
+    maxRounds: config.maxRounds
+  });
 }
 
 function cloneGame(game) {

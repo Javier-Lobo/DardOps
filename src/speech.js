@@ -1,21 +1,22 @@
+import { formatDartLabel, translate } from "./i18n.js";
 import { VOICE_MODES } from "./voice-modes.js";
 
-export function speakDart(dart, gameKind, voiceMode) {
+export function speakDart(dart, gameKind, voiceMode, language = "es") {
   if (!canSpeakDarts(voiceMode)) {
     return;
   }
   window.speechSynthesis.cancel();
-  const message = buildDartAnnouncement(dart, gameKind);
-  window.speechSynthesis.speak(createSpanishUtterance(message));
+  const message = buildDartAnnouncement(dart, gameKind, language);
+  window.speechSynthesis.speak(createLocalizedUtterance(message, language));
 }
 
-export function speakTurn(turn, insult, voiceMode) {
+export function speakTurn(turn, status, insult, voiceMode, language = "es") {
   if (!canSpeak(voiceMode)) {
     return;
   }
-  const pointsMessage = buildTurnAnnouncement(turn);
-  const message = buildTurnSpeech(pointsMessage, turn.status, insult, voiceMode);
-  const utterance = createSpanishUtterance(message);
+  const pointsMessage = buildTurnAnnouncement(turn, language);
+  const message = buildTurnSpeech(pointsMessage, status, insult, voiceMode);
+  const utterance = createLocalizedUtterance(message, language);
   window.speechSynthesis.speak(utterance);
 }
 
@@ -26,61 +27,62 @@ export function buildTurnSpeech(pointsMessage, status, insult, voiceMode) {
   return parts.join(" ");
 }
 
-export function buildDartAnnouncement(dart, gameKind) {
+export function buildDartAnnouncement(dart, gameKind, language = "es") {
   let message;
   if (dart.value === 0) {
-    message = "Fuera. Cero puntos.";
+    message = translate(language, "speechOutside");
   } else if (gameKind === "cricket") {
-    message = buildCricketDartAnnouncement(dart);
+    message = buildCricketDartAnnouncement(dart, language);
   } else {
-    message = `${dart.label}. ${dart.points} puntos.`;
+    message = `${formatDartLabel(dart, language)}. ${translate(language, "points", { points: dart.points })}.`;
   }
   return message;
 }
 
-export function buildTurnAnnouncement(turn) {
+export function buildTurnAnnouncement(turn, language = "es") {
   let message;
   if (turn.bust) {
-    message = `${turn.playerName}, turno anulado. Cero puntos.`;
+    message = translate(language, "speechTurnBust", { name: turn.playerName });
   } else if (turn.gameKind === "cricket" && turn.points === 0) {
-    message = `${turn.playerName}, turno completado.`;
+    message = translate(language, "speechTurnComplete", { name: turn.playerName });
   } else if (turn.gameKind === "cricket") {
-    message = `${turn.playerName}, ${turn.points} puntos añadidos en este turno.`;
+    message = translate(language, "speechCricketPoints", { name: turn.playerName, points: turn.points });
   } else {
-    message = `${turn.playerName}, ${turn.points} puntos en este turno.`;
+    message = translate(language, "speechTurnPoints", { name: turn.playerName, points: turn.points });
   }
   return message;
 }
 
-function buildCricketDartAnnouncement(dart) {
-  const parts = [dart.label];
+function buildCricketDartAnnouncement(dart, language) {
+  const parts = [formatDartLabel(dart, language)];
   if (dart.marksAdded > 0) {
-    parts.push(formatMarksAnnouncement(dart.marksAdded));
+    parts.push(formatMarksAnnouncement(dart.marksAdded, language));
   }
   if (dart.awardedPoints > 0) {
-    parts.push(`${dart.awardedPoints} puntos`);
+    parts.push(translate(language, "points", { points: dart.awardedPoints }));
   }
   return `${parts.join(". ")}.`;
 }
 
-function formatMarksAnnouncement(marks) {
-  const labels = { 1: "Una marca", 2: "Dos marcas", 3: "Tres marcas" };
-  return labels[marks];
+function formatMarksAnnouncement(marks, language) {
+  const keys = { 1: "oneMark", 2: "twoMarks", 3: "threeMarks" };
+  return translate(language, keys[marks]);
 }
 
-export function speakPlayerTurn(playerName, voiceMode) {
+export function speakPlayerTurn(playerName, voiceMode, language = "es") {
   if (!canSpeak(voiceMode)) {
     return;
   }
-  window.speechSynthesis.speak(createSpanishUtterance(`Turno de ${playerName}.`));
+  const message = translate(language, "speechPlayerTurn", { name: playerName });
+  window.speechSynthesis.speak(createLocalizedUtterance(message, language));
 }
 
-export function speakWinner(playerName, insult, voiceMode) {
+export function speakWinner(playerName, insult, voiceMode, language = "es") {
   if (voiceMode !== VOICE_MODES.FULL || !canSpeak(voiceMode)) {
     return;
   }
-  const message = `Fin de la partida. Ha ganado ${playerName}. ${insult}`;
-  window.speechSynthesis.speak(createSpanishUtterance(message));
+  const message = translate(language, "speechWinner", { name: playerName, insult });
+  window.speechSynthesis.speak(createLocalizedUtterance(message, language));
 }
 
 export function cancelSpeech() {
@@ -89,15 +91,16 @@ export function cancelSpeech() {
   }
 }
 
-function createSpanishUtterance(message) {
+function createLocalizedUtterance(message, language) {
+  const voiceLanguage = language === "en" ? "en-GB" : "es-ES";
   const utterance = new SpeechSynthesisUtterance(message);
-  utterance.lang = "es-ES";
+  utterance.lang = voiceLanguage;
   utterance.rate = 0.96;
   utterance.pitch = 0.88;
   utterance.volume = 0.95;
-  const spanishVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.startsWith("es"));
-  if (spanishVoice) {
-    utterance.voice = spanishVoice;
+  const localizedVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.startsWith(language));
+  if (localizedVoice) {
+    utterance.voice = localizedVoice;
   }
   return utterance;
 }

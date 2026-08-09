@@ -9,4 +9,8 @@ describe("indicadores de Cricket", () => {
   ])("representa %i marcas con puntos y color propio", (count, className, dots, label) => {
     expect(getCricketMarkView(count)).toEqual({ className, dots, label });
   });
+
+  it("traduce las etiquetas accesibles al inglés", () => {
+    expect(getCricketMarkView(2, "en").label).toBe("Two marks");
+  });
 });

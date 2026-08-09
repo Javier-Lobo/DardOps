@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { loadGame, saveGame } from "./preferences.js";
+import { loadGame, loadPreferences, saveGame } from "./preferences.js";
 
 const game = {
   version: 2,
@@ -32,5 +32,11 @@ describe("persistencia de partida", () => {
       removeItem: vi.fn()
     });
     expect(loadGame().players[0]).toMatchObject({ turnsPlayed: 2 });
+  });
+
+  it("carga y normaliza el idioma persistido", () => {
+    vi.stubGlobal("localStorage", { getItem: vi.fn((key) => key === "dardops.language" ? "en" : null) });
+    vi.stubGlobal("window", { matchMedia: vi.fn(() => ({ matches: false })) });
+    expect(loadPreferences().language).toBe("en");
   });
 });

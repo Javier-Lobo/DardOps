@@ -1,3 +1,5 @@
+import { ENGLISH_INSULTS } from "./insults-en.js";
+
 const GENERAL_INSULTS = [
   "Te has lucido, {name}. Vergüenza debería darte.",
   "{name}, la diana está quieta. Por si necesitabas el dato.",
@@ -119,17 +121,25 @@ const GOOD_SCORE_INSULTS = [
   "{name}, rozas la excelencia. Tranquilo, seguro que se te pasa."
 ];
 
-export function getInsult(turn, previousInsult = "", randomValue = Math.random()) {
-  let collection = GENERAL_INSULTS;
+export function getInsult(turn, previousInsult = "", language = "es", randomValue = Math.random()) {
+  const localizedInsults = getLocalizedInsults(language);
+  let collection = localizedInsults.general;
   if (turn.bust) {
-    collection = BUST_INSULTS;
+    collection = localizedInsults.bust;
   } else if (turn.rawPoints <= 25) {
-    collection = LOW_SCORE_INSULTS;
+    collection = localizedInsults.low;
   } else if (turn.rawPoints >= 100) {
-    collection = GOOD_SCORE_INSULTS;
+    collection = localizedInsults.good;
   }
   const insults = collection.map((template) => formatInsult(template, turn));
   return selectDifferentInsult(insults, previousInsult, randomValue);
+}
+
+function getLocalizedInsults(language) {
+  if (language === "en") {
+    return ENGLISH_INSULTS;
+  }
+  return { general: GENERAL_INSULTS, low: LOW_SCORE_INSULTS, bust: BUST_INSULTS, good: GOOD_SCORE_INSULTS };
 }
 
 function formatInsult(template, turn) {

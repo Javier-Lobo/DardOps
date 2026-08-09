@@ -1,7 +1,8 @@
 # DardOps
 
 Marcador local para jugar con una diana analógica. Incluye diana interactiva,
-turnos automáticos de tres dardos, voz española, feedback AudioCSS y cinco juegos:
+turnos automáticos de tres dardos, interfaz y voz en español o inglés,
+feedback AudioCSS y cinco juegos:
 501, 301, Cricket, Vuelta al reloj y Puntuación alta.
 
 ## Arranque con Docker
@@ -28,3 +29,5 @@ AudioCSS, sin ficheros MP3/WAV.
 
 El botón de voz alterna entre modo completo (`A`), solo jugador/total/pulla
 (`T`) y silencio (`0`). El botón de sonido controla AudioCSS por separado.
+El selector `ES`/`EN` cambia en caliente todos los textos, estados, pullas y la
+voz del navegador, y conserva la preferencia para la próxima visita.

@@ -1,3 +1,5 @@
+import { ENGLISH_WINNER_INSULTS } from "./winner-insults-en.js";
+
 const WINNER_INSULTS = [
   "Has ganado, {name}. Intenta no convertirlo en el único logro de tu vida.",
   "Enhorabuena, {name}. Eras la opción menos mala y eso ha bastado.",
@@ -31,8 +33,9 @@ const WINNER_INSULTS = [
   "Victoria de {name}. Puedes levantar los brazos, pero aléjate de los dardos."
 ];
 
-export function getWinnerInsult(playerName, previousInsult = "", randomValue = Math.random()) {
-  const insults = WINNER_INSULTS.map((template) => template.replaceAll("{name}", playerName));
+export function getWinnerInsult(playerName, previousInsult = "", language = "es", randomValue = Math.random()) {
+  const templates = language === "en" ? ENGLISH_WINNER_INSULTS : WINNER_INSULTS;
+  const insults = templates.map((template) => template.replaceAll("{name}", playerName));
   const available = insults.filter((insult) => insult !== previousInsult);
   const index = Math.floor(randomValue * available.length);
   return available[index];

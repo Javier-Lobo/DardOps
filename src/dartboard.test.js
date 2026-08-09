@@ -9,4 +9,11 @@ describe("colores de la diana", () => {
     expect(board).toMatch(/single-dark[^>]+data-value="1"/);
     expect(board).toMatch(/triple-green[^>]+data-value="1"/);
   });
+
+  it("traduce la diana y los impactos al inglés", () => {
+    const board = createDartboardMarkup("en");
+    expect(board).toContain('aria-label="Interactive dartboard"');
+    expect(board).toContain('data-label="Double 20"');
+    expect(board).toContain("MISS · 0");
+  });
 });

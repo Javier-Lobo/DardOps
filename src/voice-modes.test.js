@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getNextVoiceMode, normalizeVoiceMode, VOICE_MODES } from "./voice-modes.js";
+import { getNextVoiceMode, getVoiceModeView, normalizeVoiceMode, VOICE_MODES } from "./voice-modes.js";
 
 describe("modos de voz", () => {
   it("recorre completa, solo turno y silencio en el mismo botón", () => {
@@ -11,5 +11,9 @@ describe("modos de voz", () => {
   it("migra la preferencia booleana anterior", () => {
     expect(normalizeVoiceMode("false")).toBe(VOICE_MODES.SILENT);
     expect(normalizeVoiceMode("true")).toBe(VOICE_MODES.FULL);
+  });
+
+  it("traduce la descripción accesible del modo", () => {
+    expect(getVoiceModeView(VOICE_MODES.TURN_ONLY, "en").label).toBe("Turn, total and insult only");
   });
 });

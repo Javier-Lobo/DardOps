@@ -3,9 +3,10 @@ import "./styles.css";
 import { createDartboardMarkup } from "./dartboard.js";
 import { getCricketMarkView } from "./cricket-marks.js";
 import { GAME_CONFIGS, GAME_ORDER, CRICKET_TARGETS } from "./game-config.js";
-import { createGame, getGameStatus, getTurnAwardedTotal, getTurnTotal, getWinner, throwDart, undoDart } from "./game-engine.js";
+import { createGame, getGameStatus, getTurnAwardedTotal, getTurnStatus, getTurnTotal, getWinner, throwDart, undoDart } from "./game-engine.js";
 import { getInsult } from "./insults.js";
 import { icon } from "./icons.js";
+import { formatDartLabel, getGameText, getNextLanguage, translate } from "./i18n.js";
 import { cancelSpeech, speakDart, speakPlayerTurn, speakTurn, speakWinner } from "./speech.js";
 import { clearGame, loadGame, loadPreferences, saveGame, savePreference } from "./preferences.js";
 import { configureSound, playSound } from "./sound.js";
@@ -42,19 +43,20 @@ function render() {
 
 function renderHeader() {
   const themeIcon = state.preferences.theme === "dark" ? "sun" : "moon";
-  const voiceView = getVoiceModeView(state.preferences.voiceMode);
+  const voiceView = getVoiceModeView(state.preferences.voiceMode, state.preferences.language);
   return `<header class="app-header">
-    <button class="brand" data-action="home" aria-label="DardOps, nueva partida">
+    <button class="brand" data-action="home" aria-label="${text("newGameLabel")}">
       <span class="brand-mark">${icon("target")}</span>
-      <span><strong>Dard<span>Ops</span></strong><small>LA DIANA JUZGA</small></span>
+      <span><strong>Dard<span>Ops</span></strong><small>${text("brandTagline")}</small></span>
     </button>
     <div class="header-actions">
       <button class="icon-button voice-mode-button" data-action="voice" data-voice-mode="${state.preferences.voiceMode}"
-        aria-label="${voiceView.label}. Pulsar para cambiar de modo" title="${voiceView.label}">
+        aria-label="${voiceView.label}. ${text("voiceChange")}" title="${voiceView.label}">
         ${icon(voiceView.icon)}<span class="voice-mode-badge" aria-hidden="true">${voiceView.badge}</span>
       </button>
-      <button class="icon-button" data-action="sound" aria-pressed="${state.preferences.sound}" title="Activar o silenciar sonidos">${icon(state.preferences.sound ? "volume" : "muted")}</button>
-      <button class="icon-button" data-action="theme" title="Cambiar tema">${icon(themeIcon)}</button>
+      <button class="icon-button" data-action="sound" aria-pressed="${state.preferences.sound}" title="${text("soundToggle")}">${icon(state.preferences.sound ? "volume" : "muted")}</button>
+      <button class="icon-button" data-action="theme" title="${text("themeToggle")}">${icon(themeIcon)}</button>
+      <button class="icon-button language-button" data-action="language" title="${text("languageToggle")}">${state.preferences.language.toUpperCase()}</button>
     </div>
   </header>`;
 }
@@ -72,18 +74,18 @@ function renderScreen() {
 function renderPlayerSetup() {
   const inputs = Array.from({ length: state.playerCount }, (_, index) => `
     <label class="player-field">
-      <span>Jugador ${index + 1}</span>
+      <span>${text("player", { number: index + 1 })}</span>
       <input data-player-index="${index}" maxlength="24" autocomplete="off"
-        value="${escapeHtml(state.playerNames[index] ?? "")}" placeholder="Nombre de la víctima ${index + 1}" />
+        value="${escapeHtml(state.playerNames[index] ?? "")}" placeholder="${text("victimPlaceholder", { number: index + 1 })}" />
     </label>`).join("");
   return `<section class="setup-shell bounce-in-top">
-    ${renderStepHeader(1, "Reúne a las víctimas", "Pon nombre a quienes van a perder la dignidad.")}
+    ${renderStepHeader(1, text("setupPlayersTitle"), text("setupPlayersSubtitle"))}
     <div class="panel setup-panel">
-      <label class="count-field"><span>Número de jugadores</span>
+      <label class="count-field"><span>${text("playerCount")}</span>
         <select data-player-count>${renderCountOptions()}</select>
       </label>
       <div class="player-grid">${inputs}</div>
-      <button class="primary wide" data-action="choose-game">Elegir juego <span>→</span></button>
+      <button class="primary wide" data-action="choose-game">${text("chooseGame")} <span>→</span></button>
     </div>
   </section>`;
 }
@@ -97,19 +99,20 @@ function renderCountOptions() {
 function renderGameSetup() {
   const cards = GAME_ORDER.map((gameId, index) => {
     const game = GAME_CONFIGS[gameId];
+    const gameText = getGameText(gameId, state.preferences.language);
     return `<button class="game-card slide-in" style="--delay:${index * 65}ms" data-game-id="${game.id}">
-      <span class="game-index">0${index + 1}</span><strong>${game.name}</strong><p>${game.description}</p><span class="select-label">SELECCIONAR →</span>
+      <span class="game-index">0${index + 1}</span><strong>${gameText.name}</strong><p>${gameText.description}</p><span class="select-label">${text("select")} →</span>
     </button>`;
   }).join("");
   return `<section class="game-picker">
-    ${renderStepHeader(2, "Elige el método de humillación", `${state.playerNames.filter(Boolean).map(escapeHtml).join(" · ")}`)}
+    ${renderStepHeader(2, text("gameSetupTitle"), `${state.playerNames.filter(Boolean).map(escapeHtml).join(" · ")}`)}
     <div class="game-grid">${cards}</div>
-    <button class="text-button" data-action="back-players">← Cambiar jugadores</button>
+    <button class="text-button" data-action="back-players">← ${text("backPlayers")}</button>
   </section>`;
 }
 
 function renderStepHeader(step, title, subtitle) {
-  return `<div class="eyebrow">CONFIGURACIÓN · PASO ${step} DE 2</div><h1>${title}</h1><p class="lede">${subtitle}</p>`;
+  return `<div class="eyebrow">${text("setupStep", { step })}</div><h1>${title}</h1><p class="lede">${subtitle}</p>`;
 }
 
 function renderGame() {
@@ -119,9 +122,9 @@ function renderGame() {
     <aside class="score-panel panel">${renderScorePanel(game)}</aside>
     <div class="board-panel panel">
       <div class="board-heading">
-        <div class="turn-heading"><span>Turno de</span><strong>${escapeHtml(game.players[game.currentPlayer].name)}</strong></div>
+        <div class="turn-heading"><span>${text("turnOf")}</span><strong>${escapeHtml(game.players[game.currentPlayer].name)}</strong></div>
       </div>
-      ${createDartboardMarkup()}
+      ${createDartboardMarkup(state.preferences.language)}
       ${renderCurrentDarts(game)}
     </div>
     <aside class="intel-panel panel">${renderGameIntel(game)}</aside>
@@ -138,10 +141,10 @@ function renderScorePanel(game) {
       <b>${renderPrimaryScore(game, player)}</b>
     </article>`;
   }).join("");
-  return `<div class="panel-title"><span>MARCADOR</span><em>${GAME_CONFIGS[game.gameId].name}</em></div>${players}
+  return `<div class="panel-title"><span>${text("scoreboard")}</span><em>${getGameText(game.gameId, state.preferences.language).name}</em></div>${players}
     <div class="score-actions">
-      <button data-action="undo" ${game.history.length === 0 ? "disabled" : ""}>${icon("undo")} Deshacer</button>
-      <button class="danger" data-action="restart">${icon("reset")} Nueva</button>
+      <button data-action="undo" ${game.history.length === 0 ? "disabled" : ""}>${icon("undo")} ${text("undo")}</button>
+      <button class="danger" data-action="restart">${icon("reset")} ${text("newGame")}</button>
     </div>`;
 }
 
@@ -157,21 +160,21 @@ function renderPlayerMeta(game, player) {
   const kind = GAME_CONFIGS[game.gameId].kind;
   if (kind === "cricket") {
     const closed = CRICKET_TARGETS.filter((target) => player.cricket[target] === 3).length;
-    return `${closed}/7 cerrados`;
+    return text("closed", { count: closed });
   }
   if (kind === "clock") {
-    return "objetivo actual";
+    return text("currentTarget");
   }
-  return `${player.turnsPlayed} turnos`;
+  return text("turns", { count: player.turnsPlayed });
 }
 
 function renderCurrentDarts(game) {
   const darts = [0, 1, 2].map((index) => {
     const dart = game.darts[index];
-    return `<div class="dart-slot ${dart ? "filled" : ""}"><span>D${index + 1}</span><strong>${dart ? dart.label : "—"}</strong><em>${dart ? renderDartMetric(game, dart) : ""}</em></div>`;
+    return `<div class="dart-slot ${dart ? "filled" : ""}"><span>D${index + 1}</span><strong>${dart ? formatDartLabel(dart, state.preferences.language) : "—"}</strong><em>${dart ? renderDartMetric(game, dart) : ""}</em></div>`;
   }).join("");
   const total = GAME_CONFIGS[game.gameId].kind === "cricket" ? getTurnAwardedTotal(game) : getTurnTotal(game);
-  return `<div class="turn-strip">${darts}<div class="turn-total"><span>TOTAL</span><strong>${total}</strong></div></div>`;
+  return `<div class="turn-strip">${darts}<div class="turn-total"><span>${text("total")}</span><strong>${total}</strong></div></div>`;
 }
 
 function renderDartMetric(game, dart) {
@@ -186,11 +189,11 @@ function renderDartMetric(game, dart) {
 
 function renderGameIntel(game) {
   const config = GAME_CONFIGS[game.gameId];
-  const status = getGameStatus(game);
-  return `<div class="panel-title"><span>ESTADO</span><em>RONDA ${game.round}</em></div>
+  const status = getGameStatus(game, state.preferences.language);
+  return `<div class="panel-title"><span>${text("state")}</span><em>${text("round", { round: game.round })}</em></div>
     <p class="status-copy">${escapeHtml(status)}</p>
     ${config.kind === "cricket" ? renderCricketGrid(game) : renderRules(config)}
-    <div class="commentary-box"><span>ÚLTIMO VEREDICTO</span><p>${state.lastInsult ? escapeHtml(state.lastInsult) : "La diana espera. De momento no ha tenido motivos para reírse."}</p></div>`;
+    <div class="commentary-box"><span>${text("lastVerdict")}</span><p>${state.lastInsult ? escapeHtml(state.lastInsult) : text("waitingVerdict")}</p></div>`;
 }
 
 function renderCricketGrid(game) {
@@ -200,29 +203,29 @@ function renderCricketGrid(game) {
     const closed = game.players.every((player) => player.cricket[target] === 3);
     return `<tr class="${closed ? "closed" : ""}"><th>${target === 25 ? "B" : target}</th>${marks}</tr>`;
   }).join("");
-  return `<table class="cricket-grid"><thead><tr><th>OBJ</th>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="cricket-grid"><thead><tr><th>${text("objective")}</th>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 function renderCricketMarks(markCount) {
-  const mark = getCricketMarkView(markCount);
+  const mark = getCricketMarkView(markCount, state.preferences.language);
   return `<span class="cricket-marks ${mark.className}" aria-label="${mark.label}" title="${mark.label}">${mark.dots}</span>`;
 }
 
 function renderRules(config) {
   const rules = {
-    x01: "Resta cada impacto. Si bajas de cero, dejas 1 o llegas a 0 sin doble, pierdes todo el turno.",
-    clock: "Acierta el número indicado. Cualquier anillo sirve. Después del 20, remata con bull.",
-    high: "Suma todos los impactos durante ocho rondas. Gana quien tenga más puntos. Innovador, ¿eh?"
+    x01: text("ruleX01"),
+    clock: text("ruleClock"),
+    high: text("ruleHigh")
   };
-  return `<div class="rules"><span>REGLA RÁPIDA</span><p>${rules[config.kind]}</p></div>`;
+  return `<div class="rules"><span>${text("quickRule")}</span><p>${rules[config.kind]}</p></div>`;
 }
 
 function renderWinner(winner, insult) {
-  const verdict = insult || "Contra todo pronóstico y, probablemente, por un error administrativo.";
+  const verdict = insult || text("winnerFallback");
   return `<div class="winner-overlay" role="dialog" aria-modal="true"><div class="winner-card bounce-in-top">
-    <span class="winner-kicker">PARTIDA TERMINADA</span><h2>${escapeHtml(winner.name)} gana</h2>
+    <span class="winner-kicker">${text("gameFinished")}</span><h2>${text("wins", { name: escapeHtml(winner.name) })}</h2>
     <p>${escapeHtml(verdict)}</p>
-    <button class="primary confirm" data-action="restart">Otra humillación</button>
+    <button class="primary confirm" data-action="restart">${text("anotherHumiliation")}</button>
   </div></div>`;
 }
 
@@ -232,21 +235,23 @@ function renderRestartModal() {
   }
   return `<div class="modal-backdrop">
     <dialog open class="confirm-dialog" aria-labelledby="restart-title" aria-describedby="restart-copy">
-      <span class="dialog-kicker">OPERACIÓN IRREVERSIBLE · MÁS O MENOS</span>
+      <span class="dialog-kicker">${text("restartKicker")}</span>
       <div class="dialog-warning">!</div>
-      <h2 id="restart-title">¿Abandonar la partida?</h2>
-      <p id="restart-copy">El marcador olvidará el desastre, pero quienes estaban mirando probablemente no.</p>
+      <h2 id="restart-title">${text("restartTitle")}</h2>
+      <p id="restart-copy">${text("restartCopy")}</p>
       <div class="dialog-actions">
-        <button data-action="cancel-restart">Seguir sufriendo</button>
-        <button class="danger" data-action="confirm-restart">Sí, huir</button>
+        <button data-action="cancel-restart">${text("continueGame")}</button>
+        <button class="danger" data-action="confirm-restart">${text("confirmRestart")}</button>
       </div>
     </dialog>
   </div>`;
 }
 
 function renderFooter() {
-  const status = state.game ? `${state.game.players.length} JUGADORES · RONDA ${state.game.round}` : "SISTEMA PREPARADO";
-  return `<footer><span class="live-dot"></span><strong>DARDOPS ONLINE</strong><span>${status}</span><span class="footer-spacer"></span><span>LOCAL · SIN CUENTAS · SIN EXCUSAS</span></footer>`;
+  const status = state.game
+    ? text("playersRound", { players: state.game.players.length, round: state.game.round })
+    : text("systemReady");
+  return `<footer><span class="live-dot"></span><strong>DARDOPS ONLINE</strong><span>${status}</span><span class="footer-spacer"></span><span>${text("footerLocal")}</span></footer>`;
 }
 
 function renderToast() {
@@ -262,6 +267,7 @@ function bindGlobalEvents() {
 
 function bindScreenEvents() {
   document.documentElement.dataset.theme = state.preferences.theme;
+  document.documentElement.lang = state.preferences.language;
 }
 
 function handleClick(event) {
@@ -275,7 +281,7 @@ function handleClick(event) {
   } else if (dartElement) {
     recordDart(readDart(dartElement));
   } else if (event.target.closest('[data-dart="miss"]')) {
-    recordDart({ value: 0, multiplier: 1, label: "Fuera" });
+    recordDart({ value: 0, multiplier: 1, label: text("outside") });
   }
 }
 
@@ -290,7 +296,8 @@ function handleAction(action) {
     "confirm-restart": resetGame,
     theme: toggleTheme,
     sound: toggleSound,
-    voice: toggleVoiceMode
+    voice: toggleVoiceMode,
+    language: toggleLanguage
   };
   actions[action]?.();
 }
@@ -326,7 +333,7 @@ function handleKeyboardDart(event) {
 function chooseGame() {
   const names = state.playerNames.map((name) => name.trim());
   if (names.some((name) => !name)) {
-    showToast("Pon nombre a todo el mundo. Cobarde también cuenta, pero no puede repetirse.");
+    showToast(text("missingNames"));
     return;
   }
   state.playerNames = names;
@@ -352,7 +359,7 @@ function recordDart(dart) {
   const recordedDart = getLatestRecordedDart(state.game);
   saveGame(state.game);
   playSound(state.game.winnerId ? "win" : "dart", state.preferences.sound);
-  speakDart(recordedDart, GAME_CONFIGS[state.game.gameId].kind, state.preferences.voiceMode);
+  speakDart(recordedDart, GAME_CONFIGS[state.game.gameId].kind, state.preferences.voiceMode, state.preferences.language);
   if (hasCompletedTurn(previousGame, state.game)) {
     announceTurn(state.game.lastTurn);
     if (state.game.winnerId) {
@@ -370,23 +377,24 @@ function getLatestRecordedDart(game) {
 }
 
 function announceTurn(turn) {
-  const insult = getInsult(turn, state.lastInsult);
+  const insult = getInsult(turn, state.lastInsult, state.preferences.language);
   state.lastInsult = insult;
   playSound("turn", state.preferences.sound);
-  speakTurn(turn, insult, state.preferences.voiceMode);
+  const status = getTurnStatus(state.game, turn, state.preferences.language);
+  speakTurn(turn, status, insult, state.preferences.voiceMode, state.preferences.language);
 }
 
 function announceWinner() {
   const winner = getWinner(state.game);
-  const insult = getWinnerInsult(winner.name, state.lastInsult);
+  const insult = getWinnerInsult(winner.name, state.lastInsult, state.preferences.language);
   state.winnerInsult = insult;
   state.lastInsult = insult;
-  speakWinner(winner.name, insult, state.preferences.voiceMode);
+  speakWinner(winner.name, insult, state.preferences.voiceMode, state.preferences.language);
 }
 
 function announceCurrentPlayer() {
   const player = state.game.players[state.game.currentPlayer];
-  speakPlayerTurn(player.name, state.preferences.voiceMode);
+  speakPlayerTurn(player.name, state.preferences.voiceMode, state.preferences.language);
 }
 
 function undoLastDart() {
@@ -394,7 +402,7 @@ function undoLastDart() {
     return;
   }
   state.game = undoDart(state.game);
-  state.lastInsult = "Rectificar es de sabios. Tú solo has pulsado deshacer.";
+  state.lastInsult = text("undoVerdict");
   cancelSpeech();
   saveGame(state.game);
   playSound("undo", state.preferences.sound);
@@ -450,6 +458,20 @@ function toggleVoiceMode() {
   render();
 }
 
+function toggleLanguage() {
+  state.preferences.language = getNextLanguage(state.preferences.language);
+  state.lastInsult = "";
+  state.winnerInsult = getLocalizedWinnerInsult();
+  cancelSpeech();
+  savePreference("language", state.preferences.language);
+  render();
+}
+
+function getLocalizedWinnerInsult() {
+  const winner = state.game ? getWinner(state.game) : null;
+  return winner ? getWinnerInsult(winner.name, "", state.preferences.language) : "";
+}
+
 function changeScreen(screen) {
   state.screen = screen;
   render();
@@ -483,4 +505,8 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function text(key, parameters) {
+  return translate(state.preferences.language, key, parameters);
 }

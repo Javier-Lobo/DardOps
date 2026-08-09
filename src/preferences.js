@@ -1,10 +1,12 @@
 import { normalizeVoiceMode } from "./voice-modes.js";
 import { compactGameState } from "./game-state.js";
+import { normalizeLanguage } from "./i18n.js";
 
 const GAME_KEY = "dardops.game.v1";
 const THEME_KEY = "dardops.theme";
 const SOUND_KEY = "dardops.sound";
 const VOICE_KEY = "dardops.voice";
+const LANGUAGE_KEY = "dardops.language";
 
 export function loadGame() {
   try {
@@ -41,11 +43,12 @@ export function loadPreferences() {
   return {
     theme: localStorage.getItem(THEME_KEY) ?? (systemDark ? "dark" : "light"),
     sound: localStorage.getItem(SOUND_KEY) !== "false",
-    voiceMode: normalizeVoiceMode(localStorage.getItem(VOICE_KEY))
+    voiceMode: normalizeVoiceMode(localStorage.getItem(VOICE_KEY)),
+    language: normalizeLanguage(localStorage.getItem(LANGUAGE_KEY))
   };
 }
 
 export function savePreference(name, value) {
-  const keys = { theme: THEME_KEY, sound: SOUND_KEY, voiceMode: VOICE_KEY };
+  const keys = { theme: THEME_KEY, sound: SOUND_KEY, voiceMode: VOICE_KEY, language: LANGUAGE_KEY };
   localStorage.setItem(keys[name], String(value));
 }

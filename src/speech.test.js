@@ -4,12 +4,12 @@ import { VOICE_MODES } from "./voice-modes.js";
 
 describe("locución de Cricket", () => {
   it("anuncia marcas sin cantar puntos no concedidos", () => {
-    const dart = { value: 20, label: "Triple 20", points: 60, awardedPoints: 0, marksAdded: 3 };
+    const dart = { value: 20, multiplier: 3, label: "Triple 20", points: 60, awardedPoints: 0, marksAdded: 3 };
     expect(buildDartAnnouncement(dart, "cricket")).toBe("Triple 20. Tres marcas.");
   });
 
   it("anuncia únicamente los puntos realmente añadidos", () => {
-    const dart = { value: 20, label: "Doble 20", points: 40, awardedPoints: 40, marksAdded: 0 };
+    const dart = { value: 20, multiplier: 2, label: "Doble 20", points: 40, awardedPoints: 40, marksAdded: 0 };
     expect(buildDartAnnouncement(dart, "cricket")).toBe("Doble 20. 40 puntos.");
   });
 
@@ -21,5 +21,12 @@ describe("locución de Cricket", () => {
   it("limita el modo de turno al total y la pulla", () => {
     const message = buildTurnSpeech("Raquel, 60 puntos en este turno.", "Raquel tiene 441.", "Qué desastre.", VOICE_MODES.TURN_ONLY);
     expect(message).toBe("Raquel, 60 puntos en este turno. Qué desastre.");
+  });
+
+  it("construye impactos y resúmenes en inglés", () => {
+    const dart = { value: 20, multiplier: 3, points: 60, awardedPoints: 0, marksAdded: 3 };
+    const turn = { playerName: "Raquel", bust: false, gameKind: "cricket", points: 0 };
+    expect(buildDartAnnouncement(dart, "cricket", "en")).toBe("Triple 20. Three marks.");
+    expect(buildTurnAnnouncement(turn, "en")).toBe("Raquel, turn complete.");
   });
 });

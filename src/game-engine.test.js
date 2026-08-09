@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createGame, throwDart, undoDart } from "./game-engine.js";
+import { createGame, getGameStatus, getTurnStatus, throwDart, undoDart } from "./game-engine.js";
 
 const single20 = { value: 20, multiplier: 1, label: "20" };
 
@@ -92,5 +92,18 @@ describe("motor de juego", () => {
     }
     expect(game.winnerId).toBe("player-1");
     expect(game.players[0].score).toBe(480);
+  });
+
+  it("genera el estado general en inglés sin alterar la partida", () => {
+    const game = createGame(["Raquel"], "501");
+    expect(getGameStatus(game, "en")).toBe("Raquel has 501 points left. Round 1.");
+  });
+
+  it("localiza el estado del jugador cuyo turno acaba de terminar", () => {
+    let game = createGame(["Raquel", "Dani"], "501");
+    game = throwDart(game, single20);
+    game = throwDart(game, single20);
+    game = throwDart(game, single20);
+    expect(getTurnStatus(game, game.lastTurn, "en")).toBe("Raquel has 441 points left. Round 1.");
   });
 });
