@@ -128,11 +128,16 @@ npm run build
 
 ### Privacidad y funcionamiento local
 
-DardOps no necesita cuentas, backend ni base de datos. La partida y las
-preferencias viven exclusivamente en `localStorage`. La aplicación no carga
-tipografías, audio ni scripts remotos, y NGINX aplica una política CSP cerrada.
-Si borras los datos del navegador, también borrarás la partida. Luego no digas
-que fue un bust.
+DardOps no necesita cuentas, backend ni base de datos. Somos buena gente: no
+hay telemetría, analítica, rastreadores ni llamadas a servidores externos. No
+enviamos nombres, puntuaciones, preferencias ni ninguna otra cosa a ninguna
+parte, y no usamos una partida de dardos como excusa para andar jodiendo tu
+privacidad.
+
+La partida y las preferencias viven exclusivamente en `localStorage`. La
+aplicación no carga tipografías, audio ni scripts remotos, y NGINX aplica una
+política CSP cerrada. Si borras los datos del navegador, también borrarás la
+partida. Luego no digas que fue un bust.
 
 ---
 
@@ -248,7 +253,11 @@ npm run build
 
 ### Privacy and local operation
 
-DardOps needs no accounts, backend or database. The game and preferences live
-exclusively in `localStorage`. The application loads no remote fonts, audio or
-scripts, and NGINX applies a restrictive CSP. Clearing browser data also clears
-the game. Please do not call that a bust.
+DardOps needs no accounts, backend or database. We are the good guys: there is
+no telemetry, analytics, tracking or contact with external servers. We do not
+send names, scores, preferences or anything else anywhere, and we do not use a
+darts match as an excuse to screw with your privacy.
+
+The game and preferences live exclusively in `localStorage`. The application
+loads no remote fonts, audio or scripts, and NGINX applies a restrictive CSP.
+Clearing browser data also clears the game. Please do not call that a bust.
