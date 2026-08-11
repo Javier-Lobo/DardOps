@@ -1,4 +1,5 @@
 2026-08-11
+- `index.html`, `src/assets/favicon.png`, `src/document.test.js`: añadido el rostro de la diana como favicon PNG de DardOps, integrado en el pipeline versionado de Vite y cubierto por una prueba del documento principal.
 - `README.md`: reforzada en español e inglés la declaración pública de privacidad, dejando explícito —con el cachondeo reglamentario— que DardOps no incorpora telemetría, analítica ni rastreadores y no envía nombres, puntuaciones, preferencias o dato alguno fuera del navegador.
 - `start.sh`, `start.cmd`, `src/launcher.test.js`, `README.md`: convertidos a salida bilingüe ES/EN todos los diagnósticos, instrucciones de instalación, avisos del daemon, errores de arranque y mensajes de éxito de los lanzadores Docker, manteniendo comandos copiables y pruebas explícitas de ambos idiomas.
 - `start.sh`, `start.cmd`, `src/launcher.test.js`, `README.md`: añadida detección previa del cliente Docker, Compose v2 y el daemon, con instrucciones oficiales y específicas de instalación/arranque para macOS, distribuciones Linux y Windows 10/11 con WSL 2; incorporado un lanzador nativo para Windows y pruebas de regresión de ambos flujos.
