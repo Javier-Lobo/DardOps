@@ -285,11 +285,54 @@ button.wide span { margin-left: 8px; }
 .rules p, .commentary-box p { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
 .commentary-box { margin-top: 13px; border-left: 3px solid var(--pink); }
 .commentary-box p { color: var(--ink); font-style: italic; }
-.cricket-grid { width: 100%; margin: 12px 0; border-collapse: collapse; font: 500 12px "IBM Plex Mono", monospace; text-align: center; }
+.cricket-grid-wrap { display: grid; margin: 12px 0; }
+.cricket-grid { z-index: 1; grid-area: 1 / 1; width: 100%; margin: 0; border-collapse: collapse; table-layout: fixed; font: 500 12px "IBM Plex Mono", monospace; text-align: center; }
 .cricket-grid th, .cricket-grid td { height: 34px; border-bottom: 1px solid var(--line); }
 .cricket-grid thead { color: var(--muted); font-size: 9px; }
+.cricket-grid thead th { padding-inline: clamp(6px, .65vw, 9px); }
+.cricket-player-name-viewport { display: block; width: 100%; overflow: hidden; }
+.cricket-player-name-track { display: inline-block; min-width: max-content; }
+.cricket-player-name-viewport.is-overflowing .cricket-player-name-track { will-change: transform; animation: cricket-name-scroll 6.4s ease-in-out infinite; }
 .cricket-grid tbody th { color: var(--primary); }
 .cricket-grid tr.closed th { color: var(--muted); opacity: 0.45; text-decoration: line-through; }
+.cricket-grid .active-player-column { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.cricket-beam-layer {
+  z-index: 2;
+  display: grid;
+  grid-area: 1 / 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cricket-beam-layer[data-player-count="1"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="2"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="3"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="4"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="5"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="6"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="7"] { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+.cricket-beam-layer[data-player-count="8"] { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+.cricket-turn-beam {
+  grid-row: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.cricket-turn-beam[data-player-index="0"] { grid-column: 2; }
+.cricket-turn-beam[data-player-index="1"] { grid-column: 3; }
+.cricket-turn-beam[data-player-index="2"] { grid-column: 4; }
+.cricket-turn-beam[data-player-index="3"] { grid-column: 5; }
+.cricket-turn-beam[data-player-index="4"] { grid-column: 6; }
+.cricket-turn-beam[data-player-index="5"] { grid-column: 7; }
+.cricket-turn-beam[data-player-index="6"] { grid-column: 8; }
+.cricket-turn-beam[data-player-index="7"] { grid-column: 9; }
+.cricket-beam-track, .cricket-beam-runner { fill: none; vector-effect: non-scaling-stroke; }
+.cricket-beam-track { stroke: color-mix(in srgb, var(--primary) 35%, var(--line)); stroke-width: 1; }
+.cricket-beam-runner { stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 18 82; filter: drop-shadow(0 0 4px var(--primary)); animation: cricket-border-beam 2.8s linear infinite; }
+.cricket-beam-stop-pink { stop-color: var(--pink); }
+.cricket-beam-stop-primary { stop-color: var(--primary); }
+.cricket-beam-stop-cyan { stop-color: var(--cyan); }
 .cricket-marks { display: inline-block; min-width: 32px; font-size: 11px; letter-spacing: 2px; text-decoration: none; }
 .cricket-marks.mark-0 { color: var(--muted); opacity: 0.42; }
 .cricket-marks.mark-1 { color: #35c98c; text-shadow: 0 0 8px rgba(53, 201, 140, .38); }
@@ -383,6 +426,8 @@ footer strong { color: var(--ink); }
 @keyframes slide-in-elliptic-bottom-fwd { 0% { transform: translateY(260px) rotateX(25deg) scale(.75); transform-origin: 50% 100%; opacity: 0; } 100% { transform: translateY(0) rotateX(0) scale(1); transform-origin: 50% -1400px; opacity: 1; } }
 @keyframes bounce-in-top { 0% { transform: translateY(-160px); opacity: 0; } 55% { transform: translateY(12px); opacity: 1; } 75% { transform: translateY(-5px); } 100% { transform: translateY(0); } }
 @keyframes pulse { 50% { opacity: .45; transform: scale(.8); } }
+@keyframes cricket-border-beam { to { stroke-dashoffset: -100; } }
+@keyframes cricket-name-scroll { 0%, 14%, 100% { transform: translateX(0); } 45%, 58% { transform: translateX(var(--cricket-name-offset)); } }
 
 @media (max-width: 1080px) {
   .game-layout { grid-template-columns: minmax(210px, .75fr) minmax(430px, 1.4fr); }
@@ -425,4 +470,7 @@ footer strong { color: var(--ink); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .cricket-player-name-viewport.is-overflowing { overflow-x: auto; scrollbar-width: thin; }
+  .cricket-player-name-viewport.is-overflowing .cricket-player-name-track { animation: none !important; }
+  .cricket-beam-runner { animation: none !important; stroke-dasharray: none; opacity: .72; }
 }

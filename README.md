@@ -11,6 +11,32 @@
 
 </div>
 
+## Capturas / Screenshots
+
+### Jugadores / Players
+
+| Español / Spanish | Inglés / English |
+|---|---|
+| ![Configuración de jugadores de DardOps en español / DardOps player setup in Spanish](src/assets/players-es.png) | ![Configuración de jugadores de DardOps en inglés / DardOps player setup in English](src/assets/players-en.png) |
+
+### Selección de juego / Game selection
+
+| Español / Spanish | Inglés / English |
+|---|---|
+| ![Selección de juego de DardOps en español / DardOps game selection in Spanish](src/assets/game-select-es.png) | ![Selección de juego de DardOps en inglés / DardOps game selection in English](src/assets/game-select-en.png) |
+
+### Partida / Match
+
+| Claro / Light | Oscuro / Dark |
+|---|---|
+| ![DardOps en tema claro / DardOps in light theme](src/assets/clear.png) | ![DardOps en tema oscuro / DardOps in dark theme](src/assets/dark.png) |
+
+### Cricket y abandono / Cricket and abandon
+
+| Cricket | Abandono / Abandon |
+|---|---|
+| ![Partida de Cricket de DardOps con jugador activo / DardOps Cricket match with active player](src/assets/cricket.png) | ![Modal de abandono de partida de DardOps / DardOps abandon game modal](src/assets/abandon.png) |
+
 ---
 
 ## Español

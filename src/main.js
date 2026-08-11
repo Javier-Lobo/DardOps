@@ -2,6 +2,8 @@ import "acs-audio";
 import "./styles.css";
 import { renderAbout } from "./about.js";
 import { getAboutContent } from "./about-content.js";
+import { getCricketBeamView, isActiveCricketColumn, renderCricketBeam } from "./cricket-beam.js";
+import { updateCricketNameScroll } from "./cricket-name-scroll.js";
 import { createDartboardMarkup } from "./dartboard.js";
 import { isMissAreaClick } from "./dart-input.js";
 import { getCricketMarkView } from "./cricket-marks.js";
@@ -208,13 +210,25 @@ function renderGameIntel(game) {
 }
 
 function renderCricketGrid(game) {
-  const headers = game.players.map((player) => `<th>${escapeHtml(player.name.slice(0, 5))}</th>`).join("");
+  const headers = game.players.map((player, index) => `<th${getCricketColumnAttributes(game, index, true)}><span class="cricket-player-name-viewport" data-cricket-player-name><span class="cricket-player-name-track">${escapeHtml(player.name)}</span></span></th>`).join("");
   const rows = CRICKET_TARGETS.map((target) => {
-    const marks = game.players.map((player) => `<td>${renderCricketMarks(player.cricket[target])}</td>`).join("");
+    const marks = game.players.map((player, index) => `<td${getCricketColumnAttributes(game, index)}>${renderCricketMarks(player.cricket[target])}</td>`).join("");
     const closed = game.players.every((player) => player.cricket[target] === 3);
     return `<tr class="${closed ? "closed" : ""}"><th>${target === 25 ? "B" : target}</th>${marks}</tr>`;
   }).join("");
-  return `<table class="cricket-grid"><thead><tr><th>${text("objective")}</th>${headers}</tr></thead><tbody>${rows}</tbody></table>`;
+  const beam = renderCricketBeam(getCricketBeamView(game.players.length, game.currentPlayer, game.winnerId));
+  return `<div class="cricket-grid-wrap"><table class="cricket-grid"><thead><tr><th>${text("objective")}</th>${headers}</tr></thead><tbody>${rows}</tbody></table>${beam}</div>`;
+}
+
+function getCricketColumnAttributes(game, columnIndex, isHeader = false) {
+  let attributes = "";
+  if (isActiveCricketColumn(columnIndex, game.currentPlayer, game.winnerId)) {
+    attributes = ' class="active-player-column"';
+    if (isHeader) {
+      attributes += ' aria-current="true"';
+    }
+  }
+  return attributes;
 }
 
 function renderCricketMarks(markCount) {
@@ -282,11 +296,13 @@ function bindGlobalEvents() {
   document.addEventListener("keydown", handleKeyboardDart);
   document.addEventListener("input", handleInput);
   document.addEventListener("change", handleChange);
+  window.addEventListener("resize", () => updateCricketNameScroll());
 }
 
 function bindScreenEvents() {
   document.documentElement.dataset.theme = state.preferences.theme;
   document.documentElement.lang = state.preferences.language;
+  updateCricketNameScroll();
 }
 
 function handleClick(event) {

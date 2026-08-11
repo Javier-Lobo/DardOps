@@ -1,5 +1,8 @@
 import { formatDartLabel, translate } from "./i18n.js";
+import { createSpeechVoiceResolver } from "./speech-voices.js";
 import { VOICE_MODES } from "./voice-modes.js";
+
+const resolveSpeechVoice = createSpeechVoiceResolver();
 
 export function speakDart(dart, gameKind, voiceMode, language = "es") {
   if (!canSpeakDarts(voiceMode)) {
@@ -98,7 +101,7 @@ function createLocalizedUtterance(message, language) {
   utterance.rate = 0.96;
   utterance.pitch = 0.88;
   utterance.volume = 0.95;
-  const localizedVoice = window.speechSynthesis.getVoices().find((voice) => voice.lang.startsWith(language));
+  const localizedVoice = resolveSpeechVoice(window.speechSynthesis.getVoices(), language);
   if (localizedVoice) {
     utterance.voice = localizedVoice;
   }
