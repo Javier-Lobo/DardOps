@@ -16,4 +16,11 @@ describe("colores de la diana", () => {
     expect(board).toContain('data-label="Double 20"');
     expect(board).toContain("MISS · 0");
   });
+
+  it("mantiene cada casilla enfocables sin añadir geometría rectangular", () => {
+    const board = createDartboardMarkup();
+    expect(board.match(/class="dart-segment/g)).toHaveLength(82);
+    expect(board.match(/tabindex="0" role="button"/g)).toHaveLength(82);
+    expect(board).not.toContain("<rect");
+  });
 });

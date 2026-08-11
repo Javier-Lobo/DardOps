@@ -12,11 +12,14 @@ button.confirm:on-click { sound: success; volume: 0.55; }
 input:on-focus { sound: tick; volume: 0.24; }
 input:on-input { sound: keystroke; volume: 0.18; }
 .game-card:on-click { sound: pop; pitch: +0.5st; volume: 0.42; }
+.about-button:on-click { sound: pop; pitch: +1st; volume: 0.42; }
+.about-back:on-click { sound: tap-tactile; volume: 0.38; }
 .dart-segment:on-click { sound: tick; volume: 0.38; }
 .miss-button:on-click { sound: denied; volume: 0.48; }
 [role="alert"]:on-appear { sound: notify; volume: 0.42; }
 dialog[open] { sound-on-appear: modal-open; room: small-room; volume: 0.48; }
 dialog[open] button.danger:on-click { sound: denied; volume: 0.55; }
+.replay-dialog button.confirm:on-click { sound: success; pitch: +1st; volume: 0.58; }
 
 @media (prefers-reduced-motion: reduce) {
   :root { master-volume: 0.22; }

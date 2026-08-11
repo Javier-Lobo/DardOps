@@ -1,14 +1,19 @@
 import "acs-audio";
 import "./styles.css";
+import { renderAbout } from "./about.js";
+import { getAboutContent } from "./about-content.js";
 import { createDartboardMarkup } from "./dartboard.js";
+import { isMissAreaClick } from "./dart-input.js";
 import { getCricketMarkView } from "./cricket-marks.js";
 import { GAME_CONFIGS, GAME_ORDER, CRICKET_TARGETS } from "./game-config.js";
 import { createGame, getGameStatus, getTurnAwardedTotal, getTurnStatus, getTurnTotal, getWinner, throwDart, undoDart } from "./game-engine.js";
 import { getInsult } from "./insults.js";
+import { renderHeaderBrand } from "./header-brand.js";
 import { icon } from "./icons.js";
 import { formatDartLabel, getGameText, getNextLanguage, translate } from "./i18n.js";
 import { cancelSpeech, speakDart, speakPlayerTurn, speakTurn, speakWinner } from "./speech.js";
 import { clearGame, loadGame, loadPreferences, saveGame, savePreference } from "./preferences.js";
+import { getRestartModalView } from "./restart-modal.js";
 import { configureSound, playSound } from "./sound.js";
 import { hasCompletedTurn } from "./turn-events.js";
 import { getWinnerInsult } from "./winner-insults.js";
@@ -24,7 +29,8 @@ const state = {
   toast: null,
   lastInsult: "",
   winnerInsult: "",
-  restartModalOpen: false
+  restartModalOpen: false,
+  aboutReturnScreen: "players"
 };
 
 if (state.game) {
@@ -44,9 +50,10 @@ function render() {
 function renderHeader() {
   const themeIcon = state.preferences.theme === "dark" ? "sun" : "moon";
   const voiceView = getVoiceModeView(state.preferences.voiceMode, state.preferences.language);
+  const aboutContent = getAboutContent(state.preferences.language);
   return `<header class="app-header">
     <button class="brand" data-action="home" aria-label="${text("newGameLabel")}">
-      <span class="brand-mark">${icon("target")}</span>
+      ${renderHeaderBrand()}
       <span><strong>Dard<span>Ops</span></strong><small>${text("brandTagline")}</small></span>
     </button>
     <div class="header-actions">
@@ -57,11 +64,15 @@ function renderHeader() {
       <button class="icon-button" data-action="sound" aria-pressed="${state.preferences.sound}" title="${text("soundToggle")}">${icon(state.preferences.sound ? "volume" : "muted")}</button>
       <button class="icon-button" data-action="theme" title="${text("themeToggle")}">${icon(themeIcon)}</button>
       <button class="icon-button language-button" data-action="language" title="${text("languageToggle")}">${state.preferences.language.toUpperCase()}</button>
+      <button class="icon-button about-button" data-action="about" aria-label="${aboutContent.title}" aria-pressed="${state.screen === "about"}" title="${aboutContent.title}">${icon("info")}</button>
     </div>
   </header>`;
 }
 
 function renderScreen() {
+  if (state.screen === "about") {
+    return renderAbout(state.preferences.language);
+  }
   if (state.screen === "players") {
     return renderPlayerSetup();
   }
@@ -120,7 +131,7 @@ function renderGame() {
   const winner = getWinner(game);
   return `<section class="game-layout">
     <aside class="score-panel panel">${renderScorePanel(game)}</aside>
-    <div class="board-panel panel">
+    <div class="board-panel panel" data-miss-area>
       <div class="board-heading">
         <div class="turn-heading"><span>${text("turnOf")}</span><strong>${escapeHtml(game.players[game.currentPlayer].name)}</strong></div>
       </div>
@@ -128,7 +139,7 @@ function renderGame() {
       ${renderCurrentDarts(game)}
     </div>
     <aside class="intel-panel panel">${renderGameIntel(game)}</aside>
-    ${winner ? renderWinner(winner, state.winnerInsult) : ""}
+    ${winner && !state.restartModalOpen ? renderWinner(winner, state.winnerInsult) : ""}
   </section>`;
 }
 
@@ -233,24 +244,32 @@ function renderRestartModal() {
   if (!state.restartModalOpen) {
     return "";
   }
+  const view = getRestartModalView(state.preferences.language, Boolean(state.game?.winnerId));
   return `<div class="modal-backdrop">
-    <dialog open class="confirm-dialog" aria-labelledby="restart-title" aria-describedby="restart-copy">
-      <span class="dialog-kicker">${text("restartKicker")}</span>
-      <div class="dialog-warning">!</div>
-      <h2 id="restart-title">${text("restartTitle")}</h2>
-      <p id="restart-copy">${text("restartCopy")}</p>
+    <dialog open class="confirm-dialog ${view.dialogClass}" aria-labelledby="restart-title" aria-describedby="restart-copy">
+      <span class="dialog-kicker">${view.kicker}</span>
+      <div class="dialog-warning">${view.icon}</div>
+      <h2 id="restart-title">${view.title}</h2>
+      <p id="restart-copy">${view.copy}</p>
       <div class="dialog-actions">
-        <button data-action="cancel-restart">${text("continueGame")}</button>
-        <button class="danger" data-action="confirm-restart">${text("confirmRestart")}</button>
+        <button data-action="cancel-restart">${view.cancel}</button>
+        <button class="${view.confirmClass}" data-action="confirm-restart">${view.confirm}</button>
       </div>
     </dialog>
   </div>`;
 }
 
 function renderFooter() {
+  if (state.screen === "about") {
+    return renderStatusFooter(getAboutContent(state.preferences.language).footer);
+  }
   const status = state.game
     ? text("playersRound", { players: state.game.players.length, round: state.game.round })
     : text("systemReady");
+  return renderStatusFooter(status);
+}
+
+function renderStatusFooter(status) {
   return `<footer><span class="live-dot"></span><strong>DARDOPS ONLINE</strong><span>${status}</span><span class="footer-spacer"></span><span>${text("footerLocal")}</span></footer>`;
 }
 
@@ -280,7 +299,7 @@ function handleClick(event) {
     startGame(gameCard.dataset.gameId);
   } else if (dartElement) {
     recordDart(readDart(dartElement));
-  } else if (event.target.closest('[data-dart="miss"]')) {
+  } else if (isMissAreaClick(event.target)) {
     recordDart({ value: 0, multiplier: 1, label: text("outside") });
   }
 }
@@ -297,7 +316,9 @@ function handleAction(action) {
     theme: toggleTheme,
     sound: toggleSound,
     voice: toggleVoiceMode,
-    language: toggleLanguage
+    language: toggleLanguage,
+    about: openAbout,
+    "close-about": closeAbout
   };
   actions[action]?.();
 }
@@ -321,6 +342,10 @@ function handleChange(event) {
 function handleKeyboardDart(event) {
   if (event.key === "Escape" && state.restartModalOpen) {
     closeRestartModal();
+    return;
+  }
+  if (event.key === "Escape" && state.screen === "about") {
+    closeAbout();
     return;
   }
   const dartElement = event.target.closest("[data-value]");
@@ -464,6 +489,20 @@ function toggleLanguage() {
   state.winnerInsult = getLocalizedWinnerInsult();
   cancelSpeech();
   savePreference("language", state.preferences.language);
+  render();
+}
+
+function openAbout() {
+  if (state.screen !== "about") {
+    state.aboutReturnScreen = state.screen;
+  }
+  cancelSpeech();
+  state.screen = "about";
+  render();
+}
+
+function closeAbout() {
+  state.screen = state.aboutReturnScreen;
   render();
 }
 
